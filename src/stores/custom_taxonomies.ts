@@ -6,7 +6,10 @@ export type Taxonomy = {
   ids: number[];
 };
 
-const initTaxonomies = JSON.parse(localStorage.getItem("taxonomies") || "[]");
+const initTaxonomies = JSON.parse(localStorage.getItem("taxonomies") || "[]").map(t => {
+  t.ids = t.ids.map(id => parseInt(id.toString()));
+  return t;
+});
 export const taxonomies: Writable<Taxonomy[]> = writable(initTaxonomies);
 taxonomies.subscribe((taxonomies) => {
   localStorage.setItem("taxonomies", JSON.stringify(taxonomies));

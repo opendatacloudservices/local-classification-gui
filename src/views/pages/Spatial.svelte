@@ -7,6 +7,8 @@
     details,
     geojson,
     thematics,
+    collections,
+    nameColumns
   } from "../../stores/spatial";
   import { onMount } from "svelte";
   import Loading from "../components/Loading.svelte";
@@ -127,6 +129,19 @@
     }
   };
 
+  let resetListSelection;
+  let listSelection = [];
+
+  const setGroupXPlan = async () => {
+    if (listSelection.length > 0) {
+      for (let i = 0; i < listSelection.length; i += 1) {
+        await fetch(`http://localhost:${__global.env.SPATIAL_PORT}/matches/setxplan/${listSelection[i].id}`);
+      }
+      resetListSelection();
+      reload();
+    }
+  };
+
   let thematic = '';
   let thematicSelection = null;
   const setThematic = () => {
@@ -145,6 +160,57 @@
     }
   };
 
+  let groupThematic = '';
+  let groupThematicSelection = null;
+  const setGroupThematic = async () => {
+    if (groupThematic === '' && (!groupThematicSelection || groupThematicSelection === 'new')) {
+      alert('Please insert a thematic');
+    } else {
+      let groupThematicSubmit = groupThematicSelection;
+      if (!groupThematicSelection || groupThematicSelection === 'new') {
+        groupThematicSubmit = groupThematic;
+      }
+      if (listSelection.length > 0) {
+        for (let i = 0; i < listSelection.length; i += 1) {
+          await fetch(`http://localhost:${__global.env.SPATIAL_PORT}/matches/setthematic/${listSelection[i].id}?thematic=${groupThematicSubmit}`);
+        }
+        resetListSelection();
+        thematic = '';
+        reload();
+      }
+    }
+  };
+
+  let classifyMethod = 'new';
+  let collectionName = '';
+  let collectionSelection = null;
+  let nameColumn = null;
+  const setClassify = () => {
+    console.log(classifyMethod);
+    switch (classifyMethod) {
+      case 'new':
+        fetch(`http://localhost:${__global.env.SPATIAL_PORT}/import/new/?id=${$selected}&name=${collectionName}&nameColumn=${nameColumn}`)
+          .then(() => {
+            collectionName = '';
+            reload();
+          });
+        break;
+      case 'add':
+        fetch(`http://localhost:${__global.env.SPATIAL_PORT}/import/add/?id=${$selected}&name=${collectionName}&nameColumn=${nameColumn}&collectionId=${collectionSelection}`)
+          .then(() => {
+            collectionName = '';
+            reload();
+          });
+        break;
+      case 'update':
+        break;
+      case 'merge-skip':
+        break;
+      case 'merge-replace':
+        break;
+    }
+  };
+
 </script>
 
 {#if localReady}
@@ -154,7 +220,19 @@
         <button on:click={reload}>Refresh</button>
       </div>
       <div id="match-list">
-       <Table values={transformedMatches} columns={matchColumns} click={loadDetails} />
+        <div>
+          <button on:click={setGroupXPlan}>Set XPlan</button>
+          <button on:click={setGroupThematic}>Set Thematic</button>
+          <input type="text" bind:value={groupThematic} />
+          <select bind:value={groupThematicSelection}>
+            <option value="new">New Thematic or Choose below</option>
+            {#each $thematics as thematic}
+              <option value={thematic.id}>{thematic.group} - {thematic.name}</option>
+            {/each}
+          </select>
+          <button>Drop</button>
+        </div>
+       <Table bind:resetSelection={resetListSelection} values={transformedMatches} columns={matchColumns} click={loadDetails} selectable={true} bind:selection={listSelection} />
       </div>
       <div id="match-details">
         {#if $details && $selected}
@@ -169,7 +247,25 @@
             {/each}
           </select>
           <button>Drop</button>
-          <button>Classify</button>
+          <button on:click={setClassify}>Classify</button>
+          <select bind:value={classifyMethod}>
+            <option value="new">New</option>
+            <option value="add">Add</option>
+            <option value="update">Update</option>
+            <option value="merge-skip">Merge-Skip</option>
+            <option value="merge-replace">Merge-Replace</option>
+          </select>
+          <input type="text" bind:value={collectionName} />
+          <select bind:value={collectionSelection}>
+            {#each $collections as collection}
+              <option value={collection.id}>{collection.name}</option>
+            {/each}
+          </select>
+          <select bind:value={nameColumn}>
+            {#each $nameColumns as column}
+              <option value={column.name}>{column.name}, {column.type} ({column.udt})</option>
+            {/each}
+          </select>
         </div>
         <Table values={$details} columns={detailsColumns} />
         {/if}

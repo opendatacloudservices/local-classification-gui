@@ -17,6 +17,15 @@
     hideLable?: boolean;
     formatter?: (value: string | Date | number | string[] | Date[]) => string;
   }[] = [];
+  export let selectable = false;
+  export let selection = [];
+
+  export const resetSelection = () => {
+    selectedIndices = [];
+  };
+  
+  let selectedIndices = [];
+  $: selection = values.filter((v, vi) => selectedIndices.includes(vi));
 
   $: tableColumns =
     columns.length > 0
@@ -50,6 +59,9 @@
 <table>
   <thead>
     <tr>
+      {#if selectable}
+        <th></th>
+      {/if}
       {#each tableColumns as column}
         <th
           class:sorting={column["key"] === sortColumn}
@@ -79,6 +91,9 @@
   <tbody>
     {#each sortedValues as row, index}
       <tr class:even={index % 2}>
+        {#if selectable}
+        <td><input type="checkbox" value="{index}" bind:group={selectedIndices} name="selection" /></td>
+        {/if}
         {#each tableColumns as column}
           <td class:clickable={click} on:click={() => { click ? click(row) : () => {}}}>
             {#if "formatter" in column && column["formatter"] && typeof column["formatter"] === "function"}

@@ -165,6 +165,23 @@
     }
   };
 
+  const removeIdsFromTax = (ids: number[]) => {
+    const refreshTax = {};
+    ids.forEach(id => {
+      $taxonomies.forEach((t, ti) => {
+        if (t.ids.includes(id)) {
+          if (!(ti in refreshTax)) {
+            refreshTax[ti] = t.ids;
+          }
+          refreshTax[ti].splice(refreshTax[ti].indexOf(id, 1));
+        }
+      });
+    });
+    Object.keys(refreshTax).forEach(key => {
+      $taxonomies[key].ids = refreshTax[key];
+    });
+  };
+
   const saveTaxonomy = () => {
     if (editMode) {
       const tempTaxonomy = $taxonomies[editId];
@@ -173,6 +190,7 @@
       $taxonomies[editId] = tempTaxonomy;
     } else {
       if (assignId.length > 0) {
+        removeIdsFromTax(assignId);
         if (existingCluster !== null && existingCluster !== '') {
           const clusterIds = $taxonomies[existingCluster].ids;
           assignId.forEach(id => {
@@ -357,8 +375,7 @@
                     )}
                   >{$positions[$selectedPosition].clusters[$selection[0]][
                     $selectedCluster
-                  ]}</td
-                >
+                  ]}</td>
               </tr>
             {/if}
             {#if $selection[0] in $taxonomyMap}

@@ -18,8 +18,8 @@
   export let selected: number[] = [];
   export let selectedNeighbors: number[] = [];
 
-  let width = 2400;
-  let height = 2400;
+  let width = 200;
+  let height = 200;
   let padding = 5;
   const id = "uuid_" + uuid().split("-").join("_");
   const color = scaleOrdinal(schemeCategory10);
